@@ -7,6 +7,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+/* ═══ LOGIN OVERLAY ═══════════════════════════════════════════════════════════ */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  background: #0f0f11;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.login-card {
+  background: #16161a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  padding: 48px 44px;
+  width: 100%; max-width: 420px;
+  margin: 16px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.login-brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 36px;
+  font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: #e8e8f0;
+}
+.login-brand-mark {
+  width: 30px; height: 30px; border-radius: 7px;
+  background: rgb(5,107,21);
+  display: grid; place-items: center;
+  font-size: 15px; font-weight: 700; color: #fff;
+}
+.login-title { font-size: 22px; font-weight: 600; color: #e8e8f0; margin-bottom: 6px; letter-spacing: -0.02em; }
+.login-sub   { font-size: 13px; color: #9090a8; margin-bottom: 28px; }
+.login-tabs  { display: flex; gap: 4px; margin-bottom: 24px; background: #1e1e24; border-radius: 8px; padding: 3px; }
+.login-tab   {
+  flex: 1; padding: 7px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 500; font-family: inherit;
+  background: transparent; color: #9090a8; transition: all .15s;
+}
+.login-tab.active { background: #26262e; color: #e8e8f0; }
+.login-field { margin-bottom: 14px; }
+.login-field label { display: block; font-size: 11px; font-weight: 500; color: #9090a8; margin-bottom: 5px; }
+.login-field input {
+  width: 100%; padding: 10px 12px;
+  background: #1e1e24; border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px; color: #e8e8f0; font-size: 13px; font-family: inherit;
+  outline: none; transition: border-color .15s;
+}
+.login-field input:focus { border-color: rgb(5,107,21); }
+.login-submit {
+  width: 100%; padding: 11px; margin-top: 6px;
+  background: rgb(5,107,21); color: #fff;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: opacity .15s;
+}
+.login-submit:hover { opacity: .85; }
+.login-submit:disabled { opacity: .5; cursor: not-allowed; }
+.login-error {
+  background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
+  border-radius: 8px; padding: 10px 12px;
+  color: #f87171; font-size: 12px; margin-bottom: 14px; display: none;
+}
+</style>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
@@ -3265,6 +3325,42 @@ hr, .divider { border-color: var(--border) !important; }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════════
+     LOGIN — Boreal Auth
+═══════════════════════════════════════════════ -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-mark">B</div>
+      boreal
+    </div>
+    <div class="login-title">Bienvenido a Boreal</div>
+    <div class="login-sub">Tu sistema de gestión financiera para PyMEs</div>
+
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-login" onclick="authSwitchTab('login')">Ingresar</button>
+      <button class="login-tab" id="tab-register" onclick="authSwitchTab('register')">Crear cuenta</button>
+    </div>
+
+    <div id="login-error" class="login-error"></div>
+
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="nombre@empresa.com" autocomplete="email" />
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="auth-password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
+    </div>
+    <div class="login-field" id="field-password-confirm" style="display:none">
+      <label>Confirmar contraseña</label>
+      <input type="password" id="auth-password-confirm" placeholder="Repetí la contraseña" autocomplete="new-password" />
+    </div>
+
+    <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      SETUP — Boreal Fintech
@@ -15372,32 +15468,17 @@ function jsonStringifyASCII(obj) {
 //   - Devuelve siempre el objeto message completo (content[], stop_reason)
 
 const AI_CONFIG = {
-  // URL del backend proxy local. Cambiá el puerto si usás otro en .env
-  PROXY_BASE: 'http://localhost:3000',
-  // Si el proxy no responde, intentar fetch directo (útil dentro de Claude.ai Artifacts)
-  ALLOW_DIRECT_FALLBACK: true,
-  // Cache del estado del proxy para no chequear en cada request
+  // El proxy es el mismo servidor que sirve el frontend
+  PROXY_BASE: '',
+  // Nunca llamar a Anthropic directamente desde el browser (la key está en el servidor)
+  ALLOW_DIRECT_FALLBACK: false,
   _proxyAlive: null,
   _proxyChecked: 0,
 };
 
-// Chequea (con cache de 15s) si el backend local está vivo
+// El proxy es el propio servidor — siempre disponible si el usuario está autenticado
 async function aiProxyDisponible() {
-  const now = Date.now();
-  if (AI_CONFIG._proxyAlive !== null && (now - AI_CONFIG._proxyChecked) < 15000) {
-    return AI_CONFIG._proxyAlive;
-  }
-  try {
-    const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 1500);
-    const r = await fetch(AI_CONFIG.PROXY_BASE + '/health', { signal: ctrl.signal });
-    clearTimeout(to);
-    AI_CONFIG._proxyAlive = r.ok;
-  } catch (e) {
-    AI_CONFIG._proxyAlive = false;
-  }
-  AI_CONFIG._proxyChecked = now;
-  return AI_CONFIG._proxyAlive;
+  return !!AUTH.token;
 }
 
 /**
@@ -15411,42 +15492,26 @@ async function aiRequest(payload, opts = {}) {
   const endpoint = opts.endpoint || 'messages';
   const bodyStr = jsonStringifyASCII(payload);
 
-  // 1) Intentar vía proxy local
   const viaProxy = await aiProxyDisponible();
-  if (viaProxy) {
-    const r = await fetch(AI_CONFIG.PROXY_BASE + '/api/' + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: bodyStr,
-    });
-    if (!r.ok) {
-      let msg = 'HTTP ' + r.status;
-      try { const e = await r.json(); msg = e.error?.message || msg; } catch (_) {}
-      const err = new Error(msg); err.status = r.status; err.viaProxy = true;
-      throw err;
-    }
-    return await r.json();
+  if (!viaProxy) {
+    const err = new Error('Debés iniciar sesión para usar la IA.');
+    err.offline = true; throw err;
   }
 
-  // 2) Fallback: fetch directo a Anthropic (Claude.ai Artifacts lo permite)
-  if (AI_CONFIG.ALLOW_DIRECT_FALLBACK) {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: bodyStr,
-    });
-    if (!r.ok) {
-      let msg = 'HTTP ' + r.status;
-      try { const e = await r.json(); msg = e.error?.message || msg; } catch (_) {}
-      const err = new Error(msg); err.status = r.status; err.viaProxy = false;
-      throw err;
-    }
-    return await r.json();
+  const r = await fetch('/api/' + endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + AUTH.token,
+    },
+    body: bodyStr,
+  });
+  if (!r.ok) {
+    let msg = 'HTTP ' + r.status;
+    try { const e = await r.json(); msg = e.error?.message || msg; } catch (_) {}
+    const err = new Error(msg); err.status = r.status; throw err;
   }
-
-  const err = new Error('Sin conexión: el servidor local está apagado.');
-  err.offline = true;
-  throw err;
+  return await r.json();
 }
 
 
@@ -15515,47 +15580,163 @@ window.showToast = function(msg, opts = {}) {
 };
 
 // ============================================================
-// PERSISTENCIA EN localStorage  (PASO 3)
+// AUTENTICACIÓN JWT
 // ============================================================
-const DB_STORAGE_KEY = 'pyme_copiloto_db_v1';
 
-// Guarda el estado completo de DB. Se llama tras cada cambio importante.
-function persistDB() {
+const AUTH = {
+  token: null,
+  user:  null,
+};
+
+const AUTH_STORAGE_KEY = 'boreal_auth_token';
+
+function authLoad() {
+  try { AUTH.token = localStorage.getItem(AUTH_STORAGE_KEY) || null; } catch (_) {}
+}
+
+function authSave(token, user) {
+  AUTH.token = token;
+  AUTH.user  = user;
+  try { localStorage.setItem(AUTH_STORAGE_KEY, token); } catch (_) {}
+}
+
+function authClear() {
+  AUTH.token = null;
+  AUTH.user  = null;
+  try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (_) {}
+}
+
+// Llamada autenticada al backend
+async function backendFetch(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (AUTH.token) opts.headers['Authorization'] = 'Bearer ' + AUTH.token;
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401) { authClear(); showLoginOverlay(); throw new Error('Sesión expirada'); }
+  return r;
+}
+
+// ── UI de login ───────────────────────────────────────────────────────────────
+
+let _authMode = 'login';
+
+function authSwitchTab(mode) {
+  _authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('field-password-confirm').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Ingresar' : 'Crear cuenta';
+  document.getElementById('auth-password-confirm').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function showLoginOverlay() {
+  const el = document.getElementById('login-overlay');
+  if (el) el.style.display = 'flex';
+}
+
+function hideLoginOverlay() {
+  const el = document.getElementById('login-overlay');
+  if (el) el.style.display = 'none';
+}
+
+async function authSubmit() {
+  const email    = (document.getElementById('auth-email')?.value || '').trim();
+  const password = document.getElementById('auth-password')?.value || '';
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('auth-submit-btn');
+
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    errEl.textContent = 'Completá todos los campos'; errEl.style.display = ''; return;
+  }
+  if (_authMode === 'register') {
+    const confirm = document.getElementById('auth-password-confirm')?.value || '';
+    if (password !== confirm) {
+      errEl.textContent = 'Las contraseñas no coinciden'; errEl.style.display = ''; return;
+    }
+  }
+
+  btn.disabled = true;
+  btn.textContent = _authMode === 'login' ? 'Ingresando...' : 'Creando cuenta...';
+
   try {
-    // NUNCA persistir datos de ejemplo: el sistema debe arrancar vacío.
-    if (DB._esDemo) return;
-    // Solo persistir si hay datos reales (evita pisar con vacío)
-    const hasData = DB.movimientos.length || DB.registros.length ||
-                    DB.comprobantes.length || DB.proveedores.length || DB.empresa;
-    if (!hasData) return;
-    localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(DB));
+    const endpoint = _authMode === 'login' ? '/auth/login' : '/auth/register';
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      errEl.textContent = data.error || 'Error desconocido';
+      errEl.style.display = '';
+      return;
+    }
+    authSave(data.token, data.user);
+    hideLoginOverlay();
+    await _bootAppAuthenticated();
   } catch (e) {
-    // localStorage puede fallar (modo privado, cuota llena). No romper la app.
-    console.warn('No se pudo guardar en localStorage:', e.message);
+    errEl.textContent = 'No se pudo conectar al servidor. ¿Está corriendo?';
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _authMode === 'login' ? 'Ingresar' : 'Crear cuenta';
   }
 }
 
-// Restaura DB desde localStorage. Devuelve true si recuperó datos REALES del usuario.
-function restoreDB() {
+// Enter key en los inputs del login
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('login-overlay')?.style.display !== 'none') {
+    authSubmit();
+  }
+});
+
+// ============================================================
+// PERSISTENCIA EN BACKEND  (reemplaza localStorage)
+// ============================================================
+
+const DB_DATA_KEY = 'db_v1';
+
+// Guarda el estado completo de DB en el servidor.
+async function persistDB() {
+  if (!AUTH.token) return;
+  if (DB._esDemo) return;
+  const hasData = DB.movimientos?.length || DB.registros?.length ||
+                  DB.comprobantes?.length || DB.proveedores?.length || DB.empresa;
+  if (!hasData) return;
   try {
-    const raw = localStorage.getItem(DB_STORAGE_KEY);
-    if (!raw) return false;
-    const saved = JSON.parse(raw);
+    await backendFetch('PUT', '/data/' + DB_DATA_KEY, { value: DB });
+  } catch (e) {
+    console.warn('[boreal] No se pudo persistir:', e.message);
+  }
+}
+
+// Restaura DB desde el servidor. Devuelve true si había datos reales.
+async function restoreDB() {
+  if (!AUTH.token) return false;
+  try {
+    const r = await backendFetch('GET', '/data/' + DB_DATA_KEY);
+    if (!r.ok) return false;
+    const { value: saved } = await r.json();
     if (!saved || typeof saved !== 'object') return false;
-    // Nunca restaurar datos de ejemplo
-    if (saved._esDemo) { localStorage.removeItem(DB_STORAGE_KEY); return false; }
-    // Merge campo por campo para no perder claves nuevas del esquema
+    if (saved._esDemo) return false;
     Object.keys(saved).forEach(k => { DB[k] = saved[k]; });
     return !!(DB.movimientos?.length || DB.registros?.length || DB.empresa);
   } catch (e) {
-    console.warn('No se pudo restaurar de localStorage:', e.message);
+    console.warn('[boreal] No se pudo restaurar:', e.message);
     return false;
   }
 }
 
-// Borra los datos persistidos (para el botón "empezar de cero")
-function clearPersistedDB() {
-  try { localStorage.removeItem(DB_STORAGE_KEY); } catch (e) {}
+// Borra los datos persistidos del servidor.
+async function clearPersistedDB() {
+  if (!AUTH.token) return;
+  try { await backendFetch('DELETE', '/data/' + DB_DATA_KEY); } catch (_) {}
 }
 
 
@@ -16303,18 +16484,16 @@ function optionRow(color, icon, title, desc, btnLabel, btnFn) {
     <button class="btn" style="font-size:11px;color:${color};flex-shrink:0" onclick="${btnFn}">${btnLabel}</button></div>`;
 }
 
-// Initialize the animated background when DOM is ready
-function _bootApp() {
+// Entra a la app luego de autenticarse: restaura datos o muestra setup
+async function _bootAppAuthenticated() {
   initSetupBackground();
-  // PASO 3: intentar restaurar datos persistidos antes de mostrar el setup
   try {
-    if (typeof restoreDB === 'function' && restoreDB()) {
-      // Hay datos guardados: saltear setup y entrar directo a la app
+    const hasData = await restoreDB();
+    if (hasData) {
       const ov = document.getElementById('setup-overlay');
       const am = document.getElementById('app-main');
       if (ov) ov.style.display = 'none';
       if (am) am.style.display = 'flex';
-      // Reconstruir cabecera/sidebar con los datos restaurados
       const ini = (DB.empresa || '').split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
       const av = document.getElementById('sb-avatar'); if (av) av.textContent = ini || '??';
       const nm = document.getElementById('sb-nombre'); if (nm) nm.textContent = DB.empresa || 'Mi empresa';
@@ -16324,8 +16503,36 @@ function _bootApp() {
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof showToast === 'function') showToast('Datos restaurados de tu última sesión', { type: 'success' });
     }
-  } catch (e) { console.warn('Restore falló:', e); }
+    // Si no hay datos → el setup overlay ya es visible por defecto
+  } catch (e) { console.warn('Boot autenticado falló:', e); }
 }
+
+// Boot inicial: verificar si hay token guardado antes de mostrar login
+async function _bootApp() {
+  authLoad();
+
+  if (AUTH.token) {
+    // Verificar que el token siga siendo válido
+    try {
+      const r = await fetch('/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + AUTH.token },
+      });
+      if (r.ok) {
+        const { user } = await r.json();
+        AUTH.user = user;
+        hideLoginOverlay();
+        await _bootAppAuthenticated();
+        return;
+      }
+    } catch (_) {}
+    // Token inválido
+    authClear();
+  }
+
+  // Sin token válido → mostrar login (ya visible por defecto en el HTML)
+  initSetupBackground();
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _bootApp);
 } else {
