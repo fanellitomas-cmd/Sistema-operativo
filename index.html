@@ -8,62 +8,165 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ═══ LOGIN OVERLAY ═══════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 #login-overlay {
   position: fixed; inset: 0; z-index: 2000;
   display: flex; align-items: center; justify-content: center;
-  background: #0f0f11;
-  font-family: 'IBM Plex Sans', sans-serif;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
+  font-family: 'Inter', 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
 }
-.login-card {
-  background: #16161a;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 18px;
-  padding: 48px 44px;
-  width: 100%; max-width: 420px;
-  margin: 16px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+#login-overlay::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34,197,94,0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(16,185,129,0.12) 0%, transparent 50%);
+  pointer-events: none;
 }
-.login-brand {
+.login-wrap {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%; max-width: 900px;
+  margin: 20px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10), 0 1px 0 rgba(0,0,0,0.04);
+  overflow: hidden;
+  min-height: 540px;
+}
+/* Panel izquierdo — verde */
+.login-hero {
+  background: linear-gradient(160deg, #16a34a 0%, #15803d 60%, #166534 100%);
+  padding: 52px 44px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+  color: #fff;
+}
+.login-hero::before {
+  content: '';
+  position: absolute;
+  width: 300px; height: 300px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  top: -80px; right: -80px;
+}
+.login-hero::after {
+  content: '';
+  position: absolute;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  bottom: -60px; left: -40px;
+}
+.login-hero-brand {
   display: flex; align-items: center; gap: 10px;
-  margin-bottom: 36px;
-  font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: #e8e8f0;
+  font-size: 20px; font-weight: 700; letter-spacing: -0.03em;
+  position: relative; z-index: 1;
 }
-.login-brand-mark {
-  width: 30px; height: 30px; border-radius: 7px;
-  background: rgb(5,107,21);
+.login-hero-mark {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(255,255,255,0.2);
   display: grid; place-items: center;
-  font-size: 15px; font-weight: 700; color: #fff;
+  font-size: 18px; font-weight: 800;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.3);
 }
-.login-title { font-size: 22px; font-weight: 600; color: #e8e8f0; margin-bottom: 6px; letter-spacing: -0.02em; }
-.login-sub   { font-size: 13px; color: #9090a8; margin-bottom: 28px; }
-.login-tabs  { display: flex; gap: 4px; margin-bottom: 24px; background: #1e1e24; border-radius: 8px; padding: 3px; }
-.login-tab   {
-  flex: 1; padding: 7px; border-radius: 6px; border: none; cursor: pointer;
-  font-size: 12px; font-weight: 500; font-family: inherit;
-  background: transparent; color: #9090a8; transition: all .15s;
+.login-hero-body {
+  position: relative; z-index: 1;
 }
-.login-tab.active { background: #26262e; color: #e8e8f0; }
+.login-hero-title {
+  font-size: 36px; font-weight: 700; letter-spacing: -0.04em;
+  line-height: 1.1; margin-bottom: 14px;
+}
+.login-hero-title em { font-style: italic; color: #bbf7d0; }
+.login-hero-sub {
+  font-size: 14px; line-height: 1.6;
+  color: rgba(255,255,255,0.75); max-width: 260px;
+}
+.login-hero-feats {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.login-hero-feat {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: rgba(255,255,255,0.85);
+}
+.login-hero-feat-icon {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  display: grid; place-items: center;
+  font-size: 11px; flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+/* Panel derecho — blanco */
+.login-form-panel {
+  padding: 52px 44px;
+  display: flex; flex-direction: column; justify-content: center;
+  background: #fff;
+}
+.login-form-title {
+  font-size: 24px; font-weight: 700; color: #111827;
+  letter-spacing: -0.03em; margin-bottom: 4px;
+}
+.login-form-sub {
+  font-size: 13px; color: #6b7280; margin-bottom: 28px;
+}
+.login-tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border: 1.5px solid #e5e7eb; border-radius: 10px;
+  overflow: hidden;
+}
+.login-tab {
+  flex: 1; padding: 9px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  background: transparent; color: #6b7280; transition: all .15s;
+}
+.login-tab.active {
+  background: #16a34a; color: #fff;
+}
+.login-tab:not(.active):hover { background: #f9fafb; }
 .login-field { margin-bottom: 14px; }
-.login-field label { display: block; font-size: 11px; font-weight: 500; color: #9090a8; margin-bottom: 5px; }
+.login-field label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: #374151; margin-bottom: 5px; letter-spacing: 0.01em;
+}
 .login-field input {
-  width: 100%; padding: 10px 12px;
-  background: #1e1e24; border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px; color: #e8e8f0; font-size: 13px; font-family: inherit;
-  outline: none; transition: border-color .15s;
+  width: 100%; padding: 11px 14px;
+  background: #f9fafb; border: 1.5px solid #e5e7eb;
+  border-radius: 10px; color: #111827; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s, background .15s;
 }
-.login-field input:focus { border-color: rgb(5,107,21); }
+.login-field input:focus {
+  border-color: #16a34a; background: #fff;
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.08);
+}
+.login-field input::placeholder { color: #9ca3af; }
 .login-submit {
-  width: 100%; padding: 11px; margin-top: 6px;
-  background: rgb(5,107,21); color: #fff;
-  border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
-  font-family: inherit; cursor: pointer; transition: opacity .15s;
+  width: 100%; padding: 12px; margin-top: 6px;
+  background: #16a34a; color: #fff;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: background .15s, transform .1s;
+  letter-spacing: -0.01em;
 }
-.login-submit:hover { opacity: .85; }
-.login-submit:disabled { opacity: .5; cursor: not-allowed; }
+.login-submit:hover { background: #15803d; }
+.login-submit:active { transform: scale(0.99); }
+.login-submit:disabled { background: #86efac; cursor: not-allowed; }
 .login-error {
-  background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
-  border-radius: 8px; padding: 10px 12px;
-  color: #f87171; font-size: 12px; margin-bottom: 14px; display: none;
+  background: #fef2f2; border: 1.5px solid #fecaca;
+  border-radius: 10px; padding: 10px 14px;
+  color: #dc2626; font-size: 12px; font-weight: 500;
+  margin-bottom: 14px; display: none;
+}
+.login-footer {
+  margin-top: 20px; text-align: center;
+  font-size: 12px; color: #9ca3af;
+}
+/* Responsive */
+@media (max-width: 640px) {
+  .login-wrap { grid-template-columns: 1fr; min-height: auto; }
+  .login-hero { display: none; }
+  .login-form-panel { padding: 40px 28px; }
 }
 </style>
 <style>
@@ -3330,35 +3433,64 @@ hr, .divider { border-color: var(--border) !important; }
      LOGIN — Boreal Auth
 ═══════════════════════════════════════════════ -->
 <div id="login-overlay">
-  <div class="login-card">
-    <div class="login-brand">
-      <div class="login-brand-mark">B</div>
-      boreal
-    </div>
-    <div class="login-title">Bienvenido a Boreal</div>
-    <div class="login-sub">Tu sistema de gestión financiera para PyMEs</div>
+  <div class="login-wrap">
 
-    <div class="login-tabs">
-      <button class="login-tab active" id="tab-login" onclick="authSwitchTab('login')">Ingresar</button>
-      <button class="login-tab" id="tab-register" onclick="authSwitchTab('register')">Crear cuenta</button>
+    <!-- Panel izquierdo -->
+    <div class="login-hero">
+      <div class="login-hero-brand">
+        <div class="login-hero-mark">B</div>
+        boreal
+      </div>
+      <div class="login-hero-body">
+        <div class="login-hero-title">Tu finanzas,<br><em>bajo control</em></div>
+        <div class="login-hero-sub">Gestión financiera inteligente para PyMEs, con IA integrada.</div>
+      </div>
+      <div class="login-hero-feats">
+        <div class="login-hero-feat">
+          <div class="login-hero-feat-icon">✓</div>
+          Análisis de flujo de caja en tiempo real
+        </div>
+        <div class="login-hero-feat">
+          <div class="login-hero-feat-icon">✓</div>
+          IA que detecta anomalías y oportunidades
+        </div>
+        <div class="login-hero-feat">
+          <div class="login-hero-feat-icon">✓</div>
+          Datos seguros, solo tuyos
+        </div>
+      </div>
     </div>
 
-    <div id="login-error" class="login-error"></div>
+    <!-- Panel derecho -->
+    <div class="login-form-panel">
+      <div class="login-form-title">Bienvenido</div>
+      <div class="login-form-sub">Ingresá a tu cuenta o creá una nueva</div>
 
-    <div class="login-field">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="nombre@empresa.com" autocomplete="email" />
-    </div>
-    <div class="login-field">
-      <label>Contraseña</label>
-      <input type="password" id="auth-password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
-    </div>
-    <div class="login-field" id="field-password-confirm" style="display:none">
-      <label>Confirmar contraseña</label>
-      <input type="password" id="auth-password-confirm" placeholder="Repetí la contraseña" autocomplete="new-password" />
+      <div class="login-tabs">
+        <button class="login-tab active" id="tab-login" onclick="authSwitchTab('login')">Ingresar</button>
+        <button class="login-tab" id="tab-register" onclick="authSwitchTab('register')">Crear cuenta</button>
+      </div>
+
+      <div id="login-error" class="login-error"></div>
+
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="nombre@empresa.com" autocomplete="email" />
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
+      </div>
+      <div class="login-field" id="field-password-confirm" style="display:none">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="auth-password-confirm" placeholder="Repetí la contraseña" autocomplete="new-password" />
+      </div>
+
+      <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
+
+      <div class="login-footer">Boreal — Fintech Verde &nbsp;·&nbsp; Tus datos siempre seguros</div>
     </div>
 
-    <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
   </div>
 </div>
 
@@ -15652,12 +15784,12 @@ async function authSubmit() {
   errEl.style.display = 'none';
 
   if (!email || !password) {
-    errEl.textContent = 'Completá todos los campos'; errEl.style.display = ''; return;
+    errEl.textContent = 'Completá todos los campos'; errEl.style.display = 'block'; return;
   }
   if (_authMode === 'register') {
     const confirm = document.getElementById('auth-password-confirm')?.value || '';
     if (password !== confirm) {
-      errEl.textContent = 'Las contraseñas no coinciden'; errEl.style.display = ''; return;
+      errEl.textContent = 'Las contraseñas no coinciden'; errEl.style.display = 'block'; return;
     }
   }
 
@@ -15674,7 +15806,7 @@ async function authSubmit() {
     const data = await r.json();
     if (!r.ok) {
       errEl.textContent = data.error || 'Error desconocido';
-      errEl.style.display = '';
+      errEl.style.display = 'block';
       return;
     }
     authSave(data.token, data.user);
@@ -15682,7 +15814,7 @@ async function authSubmit() {
     await _bootAppAuthenticated();
   } catch (e) {
     errEl.textContent = 'No se pudo conectar al servidor. ¿Está corriendo?';
-    errEl.style.display = '';
+    errEl.style.display = 'block';
   } finally {
     btn.disabled = false;
     btn.textContent = _authMode === 'login' ? 'Ingresar' : 'Crear cuenta';
