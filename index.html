@@ -9772,66 +9772,114 @@ function addInsumo() {
   document.getElementById('ins-act').value='';
 }
 
-// ── Actualizar macro con IA ──
+// ── Helper: obtener datos macro reales del backend ──
+async function _fetchMacroDatos() {
+  const r = await backendFetch('GET', '/macro/datos');
+  if (!r.ok) throw new Error('No se pudo conectar al servidor de datos');
+  return await r.json();
+}
+
+function _formatIPC(ipcArr) {
+  if (!ipcArr || !ipcArr.length) return 'Sin datos disponibles de INDEC.';
+  return ipcArr.slice(0, 6).map(d => {
+    const [anio, mes] = d.fecha.split('-');
+    const mesNombre = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(mes)-1] || mes;
+    return `${mesNombre} ${anio}: ${d.variacion >= 0 ? '+' : ''}${d.variacion}%`;
+  }).join(' | ');
+}
+
+// ── Actualizar contexto macro con datos reales de INDEC ──
 async function actualizarDatosMacro() {
   const argEl    = document.getElementById('inf-arg-ai');
   const globalEl = document.getElementById('inf-global-ai');
   if (!argEl || !globalEl) return;
 
-  argEl.innerHTML    = '<span style="color:var(--accent)">⟳ Consultando INDEC y fuentes oficiales...</span>';
-  globalEl.innerHTML = '<span style="color:var(--accent)">⟳ Consultando FMI WEO...</span>';
-
   const hoy = new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' });
+  argEl.innerHTML    = '<span style="color:var(--accent)">⟳ Consultando INDEC (datos.gob.ar)...</span>';
+  globalEl.innerHTML = '<span style="color:var(--accent)">⟳ Procesando con IA...</span>';
+
   try {
-    /* fetch -> aiRequest */
-    const data = await aiRequest({
-        model:'claude-sonnet-4-6', max_tokens:600,
-        messages:[{role:'user', content:
-          'Necesito los datos MÁS RECIENTES de inflación de Argentina (IPC INDEC) y global (FMI). ' +
-          `Hoy es ${hoy}. Dame: 1) IPC de los últimos 3 meses publicados por INDEC con fuente. ` +
-          '2) Proyección de inflación global 2026 del FMI WEO más reciente. ' +
-          '3) Cualquier dato nuevo del mes actual si está disponible. ' +
-          'Respondé en español, conciso, con bullets y datos concretos. Máximo 150 palabras.'
-        }]
-      });
-    const txt  = data.content?.[0]?.text || 'No se pudo obtener datos.';
+    // 1) Buscar datos reales de INDEC y dólar
+    const macro = await _fetchMacroDatos();
+    const ipcTexto   = _formatIPC(macro.ipc);
+    const dolarTexto = macro.dolar
+      ? `Dólar oficial BNA: $${macro.dolar.oficial} | Blue: $${macro.dolar.blue} (${macro.dolar.fecha ? new Date(macro.dolar.fecha).toLocaleDateString('es-AR') : 'reciente'})`
+      : 'Tipo de cambio: no disponible ahora';
+
+    // 2) Pedir a Claude que interprete y explique el impacto empresarial
+    const prompt =
+      `Sos un analista financiero argentino. Hoy es ${hoy}.\n\n` +
+      `DATOS REALES DE INDEC/BCRA:\nIPC mensual: ${ipcTexto}\n${dolarTexto}\n\n` +
+      `Con estos datos reales, explicá en 3 bullets cortos:\n` +
+      `1) Qué está pasando con la inflación (tendencia, si sube/baja)\n` +
+      `2) Cómo afecta esto a una PyME argentina (costos, precios, márgenes)\n` +
+      `3) Qué debería monitorear el dueño de la empresa este mes\n` +
+      `Respondé en español, directo y útil para un empresario. Máximo 120 palabras.`;
+
+    const data = await aiRequest({ model:'claude-sonnet-4-6', max_tokens:400, messages:[{role:'user', content:prompt}] });
+    const txt  = data.content?.[0]?.text || 'Sin análisis.';
     const html = txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
-    argEl.innerHTML    = `<div class="ai-box" style="margin:4px 0"><div class="ai-box-title">★ Datos actualizados por IA</div><div class="ai-box-text" style="font-size:11px">${html}</div></div>`;
-    globalEl.innerHTML = `<div style="font-size:11px;color:var(--text3);margin-top:4px">IA actualizada junto con datos INDEC. Ver resultado arriba.</div>`;
+
+    argEl.innerHTML = `
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:'IBM Plex Mono',monospace">
+        📊 INDEC · ${ipcTexto}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:'IBM Plex Mono',monospace">
+        💵 ${dolarTexto}
+      </div>
+      <div class="ai-box" style="margin:0">
+        <div class="ai-box-title">★ Análisis de impacto para tu empresa</div>
+        <div class="ai-box-text" style="font-size:11px">${html}</div>
+      </div>`;
+    globalEl.innerHTML = `<div style="font-size:11px;color:var(--text3);margin-top:4px">Fuente: datos.gob.ar (INDEC) + Bluelytics · Actualizado: ${hoy}</div>`;
+
   } catch(e) {
-    argEl.innerHTML    = `<div style="color:var(--red);font-size:11px">Error al consultar IA: ${e.message}</div>`;
+    argEl.innerHTML    = `<div style="color:var(--red);font-size:11px">⚠ Error: ${e.message}</div>`;
     globalEl.innerHTML = '';
   }
 }
 
-// ── Actualizar insumos del día con IA ──
+// ── Actualizar insumos del día ──
 async function actualizarInsumosDelDia() {
   const resEl = document.getElementById('inf-insumos-ai-result');
   const titEl = document.getElementById('inf-insumos-ai-title');
   const txtEl = document.getElementById('inf-insumos-ai-text');
   if (!resEl) return;
+
+  const hoy = new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' });
   resEl.style.display = 'block';
-  titEl.textContent   = '⟳ Consultando precios actuales...';
-  txtEl.textContent   = 'Buscando precios de nafta, gas, electricidad y otros insumos clave en Argentina...';
+  titEl.textContent   = '⟳ Obteniendo datos reales...';
+  txtEl.textContent   = 'Consultando INDEC y fuentes oficiales...';
 
   try {
-    /* fetch -> aiRequest */
-    const data = await aiRequest({
-        model:'claude-sonnet-4-6', max_tokens:500,
-        messages:[{role:'user', content:
-          `Hoy es ${hoy}. Dame los precios ACTUALES más recientes en Argentina de: ` +
-          '1) Nafta súper y premium (YPF, precio promedio CABA) ' +
-          '2) Gasoil (YPF) ' +
-          '3) Gas natural (tarifa residencial, cargo por consumo) ' +
-          '4) Electricidad (Edesur/Edenor, tarifa residencial) ' +
-          '5) Dólar oficial BNA ' +
-          '6) Cualquier otro insumo básico relevante para empresas. ' +
-          'Indicá la fuente de cada dato. Respondé en español con bullets cortos. Máximo 120 palabras.'
-        }]
-      });
-    const txt  = data.content?.[0]?.text || 'No se pudo obtener datos.';
-    titEl.textContent = '★ Precios actualizados — ' + new Date().toLocaleDateString('es-AR');
+    // Obtener datos macro reales (dólar + IPC como referencia)
+    const macro = await _fetchMacroDatos();
+    const dolarInfo = macro.dolar
+      ? `Dólar oficial BNA: $${macro.dolar.oficial} | Blue: $${macro.dolar.blue}`
+      : '';
+    const ipcInfo = _formatIPC(macro.ipc);
+
+    // Claude analiza qué significa para los insumos del negocio
+    const prompt =
+      `Sos un analista de costos para PyMEs argentinas. Hoy es ${hoy}.\n\n` +
+      `DATOS REALES DISPONIBLES:\n` +
+      `- IPC INDEC reciente: ${ipcInfo}\n` +
+      `- ${dolarInfo}\n\n` +
+      `Con este contexto, dame un análisis breve de cómo estos indicadores afectan los insumos típicos de una empresa:\n` +
+      `- Combustibles (nafta/gasoil): impacto en logística y transporte\n` +
+      `- Energía (gas/electricidad): impacto en producción\n` +
+      `- Materias primas importadas: efecto dólar\n` +
+      `- Sueldos: presión salarial en contexto inflacionario\n\n` +
+      `Sé específico y útil para un empresario PyME. Máximo 150 palabras.`;
+
+    const data = await aiRequest({ model:'claude-sonnet-4-6', max_tokens:500, messages:[{role:'user', content:prompt}] });
+    const txt  = data.content?.[0]?.text || 'Sin datos disponibles.';
+
+    titEl.textContent = `★ Análisis de insumos — ${hoy}`;
     txtEl.innerHTML   = txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    if (dolarInfo) {
+      txtEl.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:8px">💵 ${dolarInfo}</div>` + txtEl.innerHTML;
+    }
   } catch(e) {
     titEl.textContent = 'Error al actualizar';
     txtEl.textContent = e.message;

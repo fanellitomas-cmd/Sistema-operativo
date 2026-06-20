@@ -167,6 +167,62 @@ app.post('/api/:endpoint', requireAuth, async (req, res) => {
   }
 });
 
+// ─── Datos macro reales de Argentina ─────────────────────────────────────────
+// Proxy a APIs públicas para evitar CORS desde el browser
+
+const MACRO_CACHE = { data: null, ts: 0 };
+const MACRO_TTL   = 4 * 60 * 60 * 1000; // 4 horas
+
+app.get('/macro/datos', requireAuth, async (_req, res) => {
+  // Devolver caché si es fresco
+  if (MACRO_CACHE.data && (Date.now() - MACRO_CACHE.ts) < MACRO_TTL) {
+    return res.json(MACRO_CACHE.data);
+  }
+
+  const resultado = { ipc: null, dolar: null, error: null };
+
+  // ── IPC INDEC via datos.gob.ar ────────────────────────────────────────────
+  // Serie 148.3_INIVELNAL_DICI_M_26 = IPC Nacional mensual (variación %)
+  try {
+    const ipcRes = await fetch(
+      'https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=13&sort=desc&format=json',
+      { headers: { 'User-Agent': 'boreal-fintech/1.0' }, signal: AbortSignal.timeout(8000) }
+    );
+    if (ipcRes.ok) {
+      const ipcJson = await ipcRes.json();
+      const series  = ipcJson?.data || [];
+      resultado.ipc = series.slice(0, 13).map(([fecha, valor]) => ({
+        fecha,
+        variacion: valor !== null ? Number((valor * 100).toFixed(2)) : null,
+      })).filter(d => d.variacion !== null);
+    }
+  } catch (e) {
+    console.warn('[boreal] INDEC IPC error:', e.message);
+  }
+
+  // ── Dólar BNA via Bluelytics (pública, sin auth) ─────────────────────────
+  try {
+    const dolarRes = await fetch(
+      'https://api.bluelytics.com.ar/v2/latest',
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (dolarRes.ok) {
+      const d = await dolarRes.json();
+      resultado.dolar = {
+        oficial: d?.oficial?.value_sell ?? null,
+        blue:    d?.blue?.value_sell    ?? null,
+        fecha:   d?.last_update         ?? null,
+      };
+    }
+  } catch (e) {
+    console.warn('[boreal] Dólar error:', e.message);
+  }
+
+  MACRO_CACHE.data = resultado;
+  MACRO_CACHE.ts   = Date.now();
+  res.json(resultado);
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 
 app.get('/health', (_req, res) => {
