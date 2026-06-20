@@ -3479,11 +3479,17 @@ hr, .divider { border-color: var(--border) !important; }
       </div>
       <div class="login-field">
         <label>Contraseña</label>
-        <input type="password" id="auth-password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
+        <div style="position:relative">
+          <input type="password" id="auth-password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" style="padding-right:40px" />
+          <button type="button" onclick="togglePasswordVisibility('auth-password',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <div class="login-field" id="field-password-confirm" style="display:none">
         <label>Confirmar contraseña</label>
-        <input type="password" id="auth-password-confirm" placeholder="Repetí la contraseña" autocomplete="new-password" />
+        <div style="position:relative">
+          <input type="password" id="auth-password-confirm" placeholder="Repetí la contraseña" autocomplete="new-password" style="padding-right:40px" />
+          <button type="button" onclick="togglePasswordVisibility('auth-password-confirm',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
 
       <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
@@ -3693,6 +3699,9 @@ hr, .divider { border-color: var(--border) !important; }
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               <span class="ndb-dot" id="ndb-dot" style="display:none"></span>
             </button>
+            <select id="filtro-linea-global" class="cm-input" style="font-size:11px;width:160px;height:30px" onchange="setLineaFiltro(this.value)" title="Filtrar por línea de producto">
+              <option value="">Todas las líneas</option>
+            </select>
             <button class="btn btn-accent" onclick="nav('cashflow')" style="padding:7px 14px">+ Registrar</button>
           </div>
         </div>
@@ -4841,10 +4850,22 @@ hr, .divider { border-color: var(--border) !important; }
           <div class="metric-card"><div class="metric-label">IVA total</div><div class="metric-value c-amber" id="comp-iva">—</div></div>
         </div>
 
-        <!-- Buscador -->
+        <!-- Buscador y filtros -->
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div class="card-title" style="margin:0">Comprobantes cargados</div>
-          <input type="text" id="comp-buscar" class="cm-input" placeholder="Buscar proveedor, N°..." style="width:200px;font-size:11px" oninput="renderComprobantes()" />
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="comp-buscar" class="cm-input" placeholder="Buscar proveedor, N°..." style="width:180px;font-size:11px" oninput="renderComprobantes()" />
+            <select id="comp-filtro-estado" class="cm-input" style="width:140px;font-size:11px" onchange="renderComprobantes()">
+              <option value="">Todos los estados</option>
+              <option value="cargado">Cargado</option>
+              <option value="conciliado">Conciliado</option>
+              <option value="pendiente_afip">Pendiente AFIP</option>
+              <option value="observado">Observado</option>
+            </select>
+            <select id="comp-filtro-linea" class="cm-input" style="width:150px;font-size:11px" onchange="renderComprobantes()">
+              <option value="">Todas las líneas</option>
+            </select>
+          </div>
         </div>
 
         <div class="card mb-12">
@@ -6385,6 +6406,41 @@ function ndbMix(c1, c2, ratio) {
 
 let ndbPeriodo = '12';
 
+// ── Filtro global por línea de producto ──────────────────────────────────────
+let _lineaFiltroActual = '';
+
+function setLineaFiltro(linea) {
+  _lineaFiltroActual = linea;
+  renderDashboard();
+  // Actualizar también flujo de caja si está visible
+  if (typeof renderFlujo === 'function') try { renderFlujo(); } catch(e) {}
+}
+
+// Devuelve los movimientos filtrados por línea de producto (o todos si no hay filtro)
+function getMovsFiltrados(movimientos) {
+  if (!_lineaFiltroActual || !DB.lineas?.length) return movimientos;
+  const linea = DB.lineas.find(l => l.nombre === _lineaFiltroActual);
+  if (!linea) return movimientos;
+  const keywords = (linea.keywords || '').toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
+  if (!keywords.length) return movimientos;
+  return movimientos.filter(m =>
+    keywords.some(kw =>
+      (m.descripcion||'').toLowerCase().includes(kw) ||
+      (m.categoria||'').toLowerCase().includes(kw) ||
+      (m.concepto||'').toLowerCase().includes(kw) ||
+      (m.linea||'').toLowerCase().includes(kw)
+    )
+  );
+}
+
+function _actualizarSelectorLineas() {
+  const sel = document.getElementById('filtro-linea-global');
+  if (!sel || !DB.lineas?.length) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todas las líneas</option>' +
+    DB.lineas.map(l => `<option value="${l.nombre}" ${current === l.nombre ? 'selected' : ''}>${l.nombre}</option>`).join('');
+}
+
 function renderDashboard() {
   const has = DB.movimientos.length > 0 || DB.comprobantes.length > 0;
   const e = document.getElementById('dash-empty');
@@ -6393,6 +6449,7 @@ function renderDashboard() {
   if (d) d.style.display = has ? 'flex' : 'none';
   if (!has) return;
 
+  _actualizarSelectorLineas();
   ndbRenderHero();
   ndbRenderKPIs();
   ndbRenderFlujo();
@@ -6409,7 +6466,7 @@ function _set(id, v) { const e = _id(id); if (e) e.textContent = v; }
 
 function ndbMonthlyAgg() {
   const agg = {};
-  DB.movimientos.forEach(m => {
+  getMovsFiltrados(DB.movimientos).forEach(m => {
     const f = (m.fecha || '').slice(0, 7);
     if (!f || f.length !== 7) return;
     if (!agg[f]) agg[f] = { ingresos: 0, egresos: 0, saldo: 0 };
@@ -6456,7 +6513,7 @@ function ndbRenderKPIs() {
 
   _set('ndb-egresos', Math.floor(u.egresos).toLocaleString('es-AR'));
   ndbSetTrend('ndb-egresos-trend', u.egresos, a?.egresos, true);
-  const movsMes = meses.length ? DB.movimientos.filter(m => (m.fecha || '').startsWith(meses[meses.length-1])).length : 0;
+  const movsMes = meses.length ? getMovsFiltrados(DB.movimientos).filter(m => (m.fecha || '').startsWith(meses[meses.length-1])).length : 0;
   _set('ndb-egresos-sub', movsMes + ' movimientos');
 
   const mU = u.ingresos > 0 ? (u.saldo / u.ingresos) * 100 : 0;
@@ -6704,7 +6761,7 @@ function ndbRenderVencimientos() {
 
 function ndbRenderDistribucion() {
   const cats = {};
-  DB.movimientos.filter(m => m.tipo === 'egreso').forEach(m => {
+  getMovsFiltrados(DB.movimientos).filter(m => m.tipo === 'egreso').forEach(m => {
     let c = (m.tipoCosto && typeof TIPO_LABELS !== 'undefined' && TIPO_LABELS[m.tipoCosto]) || m.area || m.proveedor || 'Otros';
     cats[c] = (cats[c] || 0) + m.importe;
   });
@@ -6774,7 +6831,7 @@ function ndbRenderDistribucion() {
 function ndbRenderMovimientos() {
   const c = _id('ndb-movs');
   if (!c) return;
-  const movs = [...DB.movimientos]
+  const movs = [...getMovsFiltrados(DB.movimientos)]
     .filter(m => m.fecha)
     .sort((a,b) => new Date(b.fecha) - new Date(a.fecha))
     .slice(0, 5);
@@ -8519,7 +8576,7 @@ Respondé en español rioplatense, con formato claro usando **negritas** para lo
   try {
     /* fetch -> aiRequest */
     const data = await aiRequest({
-        model:'claude-sonnet-4-20250514', max_tokens:800,
+        model:'claude-sonnet-4-6', max_tokens:800,
         messages:[{role:'user', content: prompt}]
       });
     const texto = data.content?.[0]?.text || 'No se pudo generar el análisis.';
@@ -9724,15 +9781,16 @@ async function actualizarDatosMacro() {
   argEl.innerHTML    = '<span style="color:var(--accent)">⟳ Consultando INDEC y fuentes oficiales...</span>';
   globalEl.innerHTML = '<span style="color:var(--accent)">⟳ Consultando FMI WEO...</span>';
 
+  const hoy = new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' });
   try {
     /* fetch -> aiRequest */
     const data = await aiRequest({
-        model:'claude-sonnet-4-20250514', max_tokens:600,
+        model:'claude-sonnet-4-6', max_tokens:600,
         messages:[{role:'user', content:
           'Necesito los datos MÁS RECIENTES de inflación de Argentina (IPC INDEC) y global (FMI). ' +
-          'Hoy es 26 de abril de 2026. Dame: 1) IPC de los últimos 3 meses publicados por INDEC con fuente. ' +
+          `Hoy es ${hoy}. Dame: 1) IPC de los últimos 3 meses publicados por INDEC con fuente. ` +
           '2) Proyección de inflación global 2026 del FMI WEO más reciente. ' +
-          '3) Cualquier dato nuevo de abril 2026 si está disponible. ' +
+          '3) Cualquier dato nuevo del mes actual si está disponible. ' +
           'Respondé en español, conciso, con bullets y datos concretos. Máximo 150 palabras.'
         }]
       });
@@ -9759,9 +9817,9 @@ async function actualizarInsumosDelDia() {
   try {
     /* fetch -> aiRequest */
     const data = await aiRequest({
-        model:'claude-sonnet-4-20250514', max_tokens:500,
+        model:'claude-sonnet-4-6', max_tokens:500,
         messages:[{role:'user', content:
-          'Hoy es 26 de abril de 2026. Dame los precios ACTUALES más recientes en Argentina de: ' +
+          `Hoy es ${hoy}. Dame los precios ACTUALES más recientes en Argentina de: ` +
           '1) Nafta súper y premium (YPF, precio promedio CABA) ' +
           '2) Gasoil (YPF) ' +
           '3) Gas natural (tarifa residencial, cargo por consumo) ' +
@@ -10720,14 +10778,39 @@ function renderComprobantes() {
   document.getElementById('comp-data').style.display  = tiene ? 'block' : 'none';
   if (!tiene) return;
 
-  const buscar = (document.getElementById('comp-buscar')?.value || '').toLowerCase();
+  // Poblar selector de líneas de negocio dinámicamente
+  const lineaSel = document.getElementById('comp-filtro-linea');
+  if (lineaSel && DB.lineas?.length) {
+    const lineaActual = lineaSel.value;
+    lineaSel.innerHTML = '<option value="">Todas las líneas</option>' +
+      DB.lineas.map(l => `<option value="${l.nombre}" ${lineaActual === l.nombre ? 'selected' : ''}>${l.nombre}</option>`).join('');
+  }
+
+  const buscar      = (document.getElementById('comp-buscar')?.value || '').toLowerCase();
+  const filtroEstado = document.getElementById('comp-filtro-estado')?.value || '';
+  const filtroLinea  = document.getElementById('comp-filtro-linea')?.value || '';
+
   const filtered = DB.comprobantes
     .map((c, originalIdx) => ({ ...c, _idx: originalIdx }))
-    .filter(c =>
-      !buscar ||
-      (c.proveedor||'').toLowerCase().includes(buscar) ||
-      (c.nro||'').toLowerCase().includes(buscar)
-    );
+    .filter(c => {
+      if (buscar && !(c.proveedor||'').toLowerCase().includes(buscar) && !(c.nro||'').toLowerCase().includes(buscar)) return false;
+      if (filtroEstado && c.estado !== filtroEstado) return false;
+      if (filtroLinea) {
+        // Filtrar por línea: buscar si la categoría/área del comprobante coincide con keywords de la línea
+        const linea = DB.lineas?.find(l => l.nombre === filtroLinea);
+        if (linea) {
+          const keywords = (linea.keywords || '').toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
+          const hayMatch = keywords.some(kw =>
+            (c.proveedor||'').toLowerCase().includes(kw) ||
+            (c.area||'').toLowerCase().includes(kw) ||
+            (c.tipoCosto||'').toLowerCase().includes(kw) ||
+            (c.nro||'').toLowerCase().includes(kw)
+          );
+          if (!hayMatch) return false;
+        }
+      }
+      return true;
+    });
 
   const totalImporte = DB.comprobantes.reduce((a,c)=>a+c.importe, 0);
   const totalIva     = DB.comprobantes.reduce((a,c)=>a+(c.importe*(c.iva||0)/100), 0);
@@ -11367,7 +11450,7 @@ Respondé SOLO con un array JSON válido, sin markdown ni texto extra. Ejemplo:
   try {
     /* fetch -> aiRequest */
     const data = await aiRequest({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       });
@@ -12200,14 +12283,38 @@ function guardarDatosPilares(idx) {
 // ── OCR FACTURA con IA ──
 function abrirOCRFactura() {
   openOverlay(`
-    ${overlayHeader('Cargar factura con IA', 'Pegá el texto de la factura o subí una imagen')}
+    ${overlayHeader('Cargar factura con IA', 'Subí una imagen o pegá el texto de la factura')}
 
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
       La IA extrae automáticamente: proveedor, CUIT, número, fecha, importe, IVA y categoría.
     </div>
 
-    <label style="font-size:11px;color:var(--text2);font-weight:500">Texto de la factura</label>
-    <textarea id="ocr-texto" class="cm-input" rows="6" style="font-size:11px;padding:10px;font-family:inherit;margin-bottom:10px" placeholder="Pegá el texto extraído de la factura (ej: copy/paste de PDF, OCR de imagen, descripción de email)..."></textarea>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn" id="ocr-tab-img" onclick="ocrSwitchTab('img')" style="flex:1;background:var(--accent);color:#fff">📷 Imagen / Foto</button>
+      <button class="btn" id="ocr-tab-txt" onclick="ocrSwitchTab('txt')" style="flex:1">📋 Pegar texto</button>
+    </div>
+
+    <div id="ocr-panel-img">
+      <div id="ocr-drop-zone" onclick="document.getElementById('ocr-file-input').click()"
+        style="border:2px dashed var(--border2);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:10px"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--border2)'"
+        ondrop="ocrHandleDrop(event)">
+        <div style="font-size:28px;margin-bottom:6px">📷</div>
+        <div style="font-size:12px;font-weight:500;color:var(--text2)">Hacé clic o arrastrá una imagen</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG, WEBP — máx. 5MB</div>
+      </div>
+      <input type="file" id="ocr-file-input" accept="image/*" style="display:none" onchange="ocrLoadImage(this.files[0])">
+      <div id="ocr-img-preview" style="display:none;margin-bottom:10px;text-align:center">
+        <img id="ocr-img-tag" style="max-width:100%;max-height:200px;border-radius:var(--radius);border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px" id="ocr-img-name"></div>
+      </div>
+    </div>
+
+    <div id="ocr-panel-txt" style="display:none">
+      <label style="font-size:11px;color:var(--text2);font-weight:500">Texto de la factura</label>
+      <textarea id="ocr-texto" class="cm-input" rows="6" style="font-size:11px;padding:10px;font-family:inherit;margin-bottom:10px" placeholder="Pegá el texto extraído de la factura (copy/paste de PDF, email, etc.)..."></textarea>
+    </div>
 
     <button class="btn ai-btn" id="btn-ocr-procesar" onclick="procesarOCRFactura()" style="width:100%;margin-bottom:14px">★ Procesar con IA</button>
 
@@ -12231,31 +12338,72 @@ function abrirOCRFactura() {
   `);
 }
 
-async function procesarOCRFactura() {
-  const txt = document.getElementById('ocr-texto').value.trim();
-  if (!txt) { showToast('Pegá el texto de la factura'); return; }
+let _ocrMode = 'img';
+let _ocrImageBase64 = null;
+let _ocrImageMediaType = 'image/jpeg';
 
+function ocrSwitchTab(mode) {
+  _ocrMode = mode;
+  document.getElementById('ocr-panel-img').style.display = mode === 'img' ? '' : 'none';
+  document.getElementById('ocr-panel-txt').style.display = mode === 'txt' ? '' : 'none';
+  document.getElementById('ocr-tab-img').style.background = mode === 'img' ? 'var(--accent)' : '';
+  document.getElementById('ocr-tab-img').style.color      = mode === 'img' ? '#fff' : '';
+  document.getElementById('ocr-tab-txt').style.background = mode === 'txt' ? 'var(--accent)' : '';
+  document.getElementById('ocr-tab-txt').style.color      = mode === 'txt' ? '#fff' : '';
+}
+
+function ocrHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('ocr-drop-zone').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) ocrLoadImage(file);
+}
+
+function ocrLoadImage(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('La imagen no puede superar 5MB'); return; }
+  _ocrImageMediaType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    _ocrImageBase64 = dataUrl.split(',')[1];
+    document.getElementById('ocr-img-tag').src = dataUrl;
+    document.getElementById('ocr-img-name').textContent = file.name;
+    document.getElementById('ocr-img-preview').style.display = 'block';
+    document.getElementById('ocr-drop-zone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function procesarOCRFactura() {
   const btn = document.getElementById('btn-ocr-procesar');
   btn.disabled = true;
   btn.textContent = '⟳ Procesando con IA...';
 
-  const prompt = `Extraé los datos de esta factura argentina y devolvé SOLO un JSON válido sin markdown.
-Campos: proveedor, cuit, nro, fecha (YYYY-MM-DD), importe (número), iva (string como "21"), categoria (string corto).
-Si un dato no aparece, dejalo en string vacío.
+  const jsonPrompt = `Extraé los datos de esta factura argentina y devolvé SOLO un JSON válido sin markdown.
+Campos: proveedor, cuit, nro, fecha (YYYY-MM-DD), importe (número sin IVA), iva (string como "21"), categoria (string corto).
+Si un dato no aparece, dejalo en string vacío. Respondé SOLO el JSON.`;
 
-Texto de la factura:
-"""
-${txt}
-"""
+  let messages;
 
-Respondé SOLO el JSON, sin explicaciones.`;
+  if (_ocrMode === 'img') {
+    if (!_ocrImageBase64) { showToast('Seleccioná una imagen primero'); btn.disabled = false; btn.textContent = '★ Procesar con IA'; return; }
+    messages = [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: _ocrImageMediaType, data: _ocrImageBase64 } },
+      { type: 'text', text: jsonPrompt }
+    ]}];
+  } else {
+    const txt = document.getElementById('ocr-texto')?.value.trim();
+    if (!txt) { showToast('Pegá el texto de la factura'); btn.disabled = false; btn.textContent = '★ Procesar con IA'; return; }
+    messages = [{ role: 'user', content: jsonPrompt + '\n\nTexto de la factura:\n"""\n' + txt + '\n"""' }];
+  }
 
   try {
     /* fetch -> aiRequest */
     const data = await aiRequest({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
-        messages: [{ role: 'user', content: prompt }]
+        messages,
       });
     const respuesta = data.content?.[0]?.text || '{}';
     const cleaned = respuesta.replace(/```json\s*|```\s*/g, '').trim();
@@ -14061,7 +14209,7 @@ Reglas importantes:
 
   try {
     const data = await aiRequest({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       system: systemPrompt,
       messages
@@ -15821,6 +15969,14 @@ async function authSubmit() {
   }
 }
 
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
+}
+
 // Enter key en los inputs del login
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && document.getElementById('login-overlay')?.style.display !== 'none') {
@@ -16400,7 +16556,7 @@ async function getReply(txt) {
     while (iter < MAX_ITER) {
       iter++;
       const body = {
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         system: buildSystemPrompt(),
         tools: ASISTENTE_TOOLS,
@@ -16616,11 +16772,44 @@ function optionRow(color, icon, title, desc, btnLabel, btnFn) {
     <button class="btn" style="font-size:11px;color:${color};flex-shrink:0" onclick="${btnFn}">${btnLabel}</button></div>`;
 }
 
+// Migra datos de localStorage al backend si el servidor no tiene datos todavía
+async function _migrarLocalStorageSiNecesario() {
+  const OLD_KEY = 'pyme_copiloto_db_v1';
+  try {
+    const raw = localStorage.getItem(OLD_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (!saved || saved._esDemo) return false;
+    const hasRealData = saved.movimientos?.length || saved.registros?.length ||
+                        saved.comprobantes?.length || saved.proveedores?.length || saved.empresa;
+    if (!hasRealData) return false;
+    // Migrar al servidor
+    await backendFetch('PUT', '/data/db_v1', { value: saved });
+    localStorage.removeItem(OLD_KEY);
+    return true;
+  } catch (e) {
+    console.warn('[boreal] Migración localStorage fallida:', e.message);
+    return false;
+  }
+}
+
 // Entra a la app luego de autenticarse: restaura datos o muestra setup
 async function _bootAppAuthenticated() {
   initSetupBackground();
   try {
-    const hasData = await restoreDB();
+    let hasData = await restoreDB();
+
+    // Si el servidor no tiene datos, intentar migrar desde localStorage viejo
+    if (!hasData) {
+      const migrado = await _migrarLocalStorageSiNecesario();
+      if (migrado) {
+        hasData = await restoreDB();
+        if (hasData && typeof showToast === 'function') {
+          showToast('Datos migrados al nuevo sistema correctamente', { type: 'success' });
+        }
+      }
+    }
+
     if (hasData) {
       const ov = document.getElementById('setup-overlay');
       const am = document.getElementById('app-main');
