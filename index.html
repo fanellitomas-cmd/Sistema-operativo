@@ -3639,6 +3639,7 @@ hr, .divider { border-color: var(--border) !important; }
 
     <div class="nav-section">Asistente</div>
     <div class="nav-item" onclick="nav('asistente')"><div class="nav-icon">★</div>Asistente IA <span class="nav-badge badge-purple">IA</span></div>
+    <div class="nav-item" onclick="nav('configuracion')"><div class="nav-icon">⚙</div>Configuración</div>
   </nav>
   <div class="sidebar-bottom">
     <div class="company-pill">
@@ -3874,6 +3875,9 @@ hr, .divider { border-color: var(--border) !important; }
             <button class="nfc-iconbtn" title="Alertas">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
             </button>
+            <select id="filtro-linea-cashflow" class="cm-input" style="font-size:11px;width:160px;height:30px" onchange="setLineaFiltro(this.value)" title="Filtrar por línea de producto">
+              <option value="">Todas las líneas</option>
+            </select>
             <button class="btn btn-accent" onclick="nfcAbrirRegistrar()" style="padding:7px 14px">+ Registrar</button>
           </div>
         </div>
@@ -5836,6 +5840,117 @@ hr, .divider { border-color: var(--border) !important; }
       </div>
     </div>
 
+    <!-- ═══ CONFIGURACIÓN ═══════════════════════════════════════════════ -->
+    <div class="screen" id="screen-configuracion">
+      <div style="max-width:780px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:20px">
+
+        <!-- Empresa -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">🏢 Datos de la empresa</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="cm-field"><label>Nombre de la empresa</label><input type="text" id="cfg-empresa" class="cm-input" /></div>
+            <div class="cm-field"><label>CUIT</label><input type="text" id="cfg-cuit" class="cm-input" placeholder="20-12345678-9" /></div>
+            <div class="cm-field"><label>Moneda</label>
+              <select id="cfg-moneda" class="cm-input">
+                <option value="ARS">ARS — Peso argentino</option>
+                <option value="USD">USD — Dólar</option>
+                <option value="BRL">BRL — Real brasileño</option>
+              </select>
+            </div>
+            <div class="cm-field"><label>Rubro</label>
+              <select id="cfg-rubro" class="cm-input">
+                <option value="">— Seleccioná el rubro —</option>
+                <option>Gastronomía</option><option>Construcción</option><option>Tecnología</option>
+                <option>Comercio minorista</option><option>Comercio mayorista</option>
+                <option>Servicios profesionales</option><option>Salud</option>
+                <option>Educación</option><option>Logística y transporte</option>
+                <option>Manufactura</option><option>Agro</option><option>Inmobiliaria</option>
+                <option>Otro</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-accent" onclick="guardarConfigEmpresa()" style="margin-top:14px">✓ Guardar datos de empresa</button>
+        </div>
+
+        <!-- Líneas de producto -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:4px">📦 Líneas de producto</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:16px">
+            Definí las líneas de tu negocio. Usá palabras clave para que el sistema clasifique automáticamente tus movimientos.
+          </div>
+
+          <!-- Lista de líneas existentes -->
+          <div id="cfg-lineas-lista" style="margin-bottom:16px"></div>
+
+          <!-- Formulario nueva línea -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px" id="cfg-linea-form-title">+ Nueva línea de producto</div>
+            <input type="hidden" id="cfg-linea-idx" value="-1" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="cm-field"><label>Nombre</label><input type="text" id="cfg-linea-nombre" class="cm-input" placeholder="ej: Empanadas, Servicios, Producto A" /></div>
+              <div class="cm-field"><label>Color</label>
+                <select id="cfg-linea-color" class="cm-input">
+                  <option value="#34d399">Verde</option><option value="#60a5fa">Azul</option>
+                  <option value="#f87171">Rojo</option><option value="#fbbf24">Amarillo</option>
+                  <option value="#a78bfa">Violeta</option><option value="#fb923c">Naranja</option>
+                  <option value="#34d3c8">Celeste</option><option value="#f472b6">Rosa</option>
+                </select>
+              </div>
+            </div>
+            <div class="cm-field" style="margin-bottom:10px">
+              <label>Palabras clave (separadas por coma)</label>
+              <input type="text" id="cfg-linea-keywords" class="cm-input" placeholder="ej: empanada, entr, local norte" />
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">El sistema buscará estas palabras en la descripción y categoría de cada movimiento</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-accent" onclick="guardarLineaConfig()" id="cfg-linea-save-btn">+ Agregar línea</button>
+              <button class="btn" onclick="cancelarEditLinea()" id="cfg-linea-cancel-btn" style="display:none">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuenta -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">👤 Cuenta</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
+            Usuario: <strong id="cfg-user-email" style="color:var(--text)">—</strong>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+            <div class="cm-field">
+              <label>Nueva contraseña</label>
+              <div style="position:relative">
+                <input type="password" id="cfg-new-password" class="cm-input" placeholder="Mínimo 8 caracteres" style="padding-right:38px" />
+                <button type="button" onclick="togglePasswordVisibility('cfg-new-password',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0">👁</button>
+              </div>
+            </div>
+            <div class="cm-field">
+              <label>Confirmar nueva contraseña</label>
+              <div style="position:relative">
+                <input type="password" id="cfg-confirm-password" class="cm-input" placeholder="Repetí la contraseña" style="padding-right:38px" />
+                <button type="button" onclick="togglePasswordVisibility('cfg-confirm-password',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0">👁</button>
+              </div>
+            </div>
+          </div>
+          <div id="cfg-pw-msg" style="font-size:11px;margin-bottom:10px;display:none"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-accent" onclick="cambiarPasswordConfig()">🔒 Cambiar contraseña</button>
+            <button class="btn" style="color:var(--red)" onclick="cerrarSesion()">⏻ Cerrar sesión</button>
+          </div>
+        </div>
+
+        <!-- Datos & privacidad -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">🗄 Datos y privacidad</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Exportá o eliminá todos tus datos del sistema.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" onclick="exportarDatosJSON()">↓ Exportar mis datos (JSON)</button>
+            <button class="btn" style="color:var(--red)" onclick="confirmarEliminarDatos()">⚠ Eliminar todos mis datos</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- content -->
 </div><!-- main -->
 <!-- ═══════════════════════════════════════════════
@@ -6315,6 +6430,7 @@ const PAGES = {
   carga:        ['Carga manual',            'Registrá gastos e ingresos uno a uno'],
   contador:     ['Portal contador',         'Acceso solo lectura para el estudio'],
   reportes:     ['Reportes',               'Generación automática de informes'],
+  configuracion: ['Configuración',            'Cuenta, empresa y líneas de producto'],
   asistente:    ['Asistente IA',            'Consultas y análisis en tiempo real']
 };
 
@@ -6346,8 +6462,9 @@ function nav(id) {
   if (id==='gastos_detalle')   renderGastosDetalle();
   if (id==='gastos')      renderGastos();
   if (id==='carga')       renderCarga();
-  if (id==='contador')    renderContador();
-  if (id==='reportes')    renderReportes();
+  if (id==='contador')      renderContador();
+  if (id==='reportes')      renderReportes();
+  if (id==='configuracion') renderConfiguracion();
 }
 
 function mkChart(id,cfg){
@@ -6411,9 +6528,17 @@ let _lineaFiltroActual = '';
 
 function setLineaFiltro(linea) {
   _lineaFiltroActual = linea;
-  renderDashboard();
-  // Actualizar también flujo de caja si está visible
-  if (typeof renderFlujo === 'function') try { renderFlujo(); } catch(e) {}
+  // Sincronizar todos los selectores
+  ['filtro-linea-global','filtro-linea-cashflow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = linea;
+  });
+  // Re-renderizar la pantalla activa
+  const activa = document.querySelector('.screen.active')?.id?.replace('screen-','');
+  if (activa === 'dashboard')    renderDashboard();
+  else if (activa === 'cashflow')    renderCashflow();
+  else if (activa === 'flujo_anual') renderFlujoAnual();
+  else if (activa === 'rentabilidad') renderRentabilidad();
 }
 
 // Devuelve los movimientos filtrados por línea de producto (o todos si no hay filtro)
@@ -6434,11 +6559,15 @@ function getMovsFiltrados(movimientos) {
 }
 
 function _actualizarSelectorLineas() {
-  const sel = document.getElementById('filtro-linea-global');
-  if (!sel || !DB.lineas?.length) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Todas las líneas</option>' +
-    DB.lineas.map(l => `<option value="${l.nombre}" ${current === l.nombre ? 'selected' : ''}>${l.nombre}</option>`).join('');
+  const ids = ['filtro-linea-global', 'filtro-linea-cashflow'];
+  ids.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value || _lineaFiltroActual;
+    const opts = '<option value="">Todas las líneas</option>' +
+      (DB.lineas || []).map(l => `<option value="${l.nombre}" ${current === l.nombre ? 'selected' : ''}>${l.nombre}</option>`).join('');
+    sel.innerHTML = opts;
+  });
 }
 
 function renderDashboard() {
@@ -7228,6 +7357,7 @@ function renderCashflow() {
   if (d) d.style.display = tiene ? 'flex' : 'none';
   if (!tiene) return;
 
+  _actualizarSelectorLineas();
   nfcRenderHero();
   nfcRenderKPIs();
   nfcRenderMensual();
@@ -7245,7 +7375,7 @@ function nfcRenderHero() { /* static content */ }
 // ── Aggregate by month and by day for current year ──
 function nfcAggByMonth() {
   const agg = {};
-  DB.movimientos.forEach(m => {
+  getMovsFiltrados(DB.movimientos).forEach(m => {
     const f = (m.fecha || '').slice(0, 7);
     if (!f || f.length !== 7) return;
     if (!agg[f]) agg[f] = { ingresos: 0, egresos: 0, saldo: 0 };
@@ -8273,7 +8403,7 @@ let faAnalisisCache = {};    // {YYYY-MM: texto}
 // ── Source of truth for flujo anual ─────────────────────────
 // Devuelve todos los movimientos con fecha válida.
 function faGetAllMovs() {
-  return (DB.movimientos || []).filter(m => m && m.fecha);
+  return getMovsFiltrados((DB.movimientos || []).filter(m => m && m.fecha));
 }
 // Movimientos de un año (YYYY)
 function faMovsDeYear(year) {
@@ -16906,6 +17036,164 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _bootApp);
 } else {
   _bootApp();
+}
+
+// ============================================================
+// PANEL DE CONFIGURACIÓN
+// ============================================================
+
+function renderConfiguracion() {
+  // Datos de empresa
+  document.getElementById('cfg-empresa').value = DB.empresa || '';
+  document.getElementById('cfg-cuit').value     = DB.cuit    || '';
+  document.getElementById('cfg-moneda').value   = DB.moneda  || 'ARS';
+  if (DB.rubro) document.getElementById('cfg-rubro').value = DB.rubro;
+
+  // Email del usuario
+  const emailEl = document.getElementById('cfg-user-email');
+  if (emailEl) emailEl.textContent = AUTH.user?.email || '—';
+
+  renderLineasConfigLista();
+}
+
+function guardarConfigEmpresa() {
+  DB.empresa = document.getElementById('cfg-empresa').value.trim();
+  DB.cuit    = document.getElementById('cfg-cuit').value.trim();
+  DB.moneda  = document.getElementById('cfg-moneda').value;
+  DB.rubro   = document.getElementById('cfg-rubro').value;
+  persistDB();
+
+  // Actualizar sidebar
+  const av = document.getElementById('sb-avatar');
+  const nm = document.getElementById('sb-nombre');
+  const ini = DB.empresa.split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  if (av) av.textContent = ini || '??';
+  if (nm) nm.textContent = DB.empresa || 'Mi empresa';
+
+  showToast('Datos de empresa guardados', { type: 'success' });
+}
+
+// ── Líneas de producto ────────────────────────────────────────────────────────
+
+function renderLineasConfigLista() {
+  const el = document.getElementById('cfg-lineas-lista');
+  if (!el) return;
+  if (!DB.lineas || !DB.lineas.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:8px 0">Sin líneas definidas todavía. Agregá una abajo.</div>';
+    return;
+  }
+  el.innerHTML = DB.lineas.map((l, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px">
+      <div style="width:12px;height:12px;border-radius:50%;background:${l.color||'var(--accent)'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(l.nombre)}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">Keywords: ${esc(l.keywords||'—')}</div>
+      </div>
+      <button class="btn-sm btn-approve" onclick="editarLineaConfig(${i})">✎</button>
+      <button class="btn-sm btn-reject"  onclick="eliminarLineaConfig(${i})">✕</button>
+    </div>`).join('');
+  _actualizarSelectorLineas();
+}
+
+function guardarLineaConfig() {
+  const nombre   = document.getElementById('cfg-linea-nombre').value.trim();
+  const keywords = document.getElementById('cfg-linea-keywords').value.trim();
+  const color    = document.getElementById('cfg-linea-color').value;
+  const idx      = parseInt(document.getElementById('cfg-linea-idx').value);
+
+  if (!nombre) { showToast('El nombre es obligatorio'); return; }
+
+  if (idx >= 0 && idx < DB.lineas.length) {
+    DB.lineas[idx] = { ...DB.lineas[idx], nombre, keywords, color };
+  } else {
+    if (!DB.lineas) DB.lineas = [];
+    DB.lineas.push({ nombre, keywords, color, ventas: 0, costos: 0 });
+  }
+
+  persistDB();
+  _limpiarFormLinea();
+  renderLineasConfigLista();
+  showToast(`Línea "${nombre}" guardada`, { type: 'success' });
+}
+
+function editarLineaConfig(i) {
+  const l = DB.lineas[i];
+  document.getElementById('cfg-linea-idx').value          = i;
+  document.getElementById('cfg-linea-nombre').value       = l.nombre || '';
+  document.getElementById('cfg-linea-keywords').value     = l.keywords || '';
+  document.getElementById('cfg-linea-color').value        = l.color || '#34d399';
+  document.getElementById('cfg-linea-form-title').textContent = `✎ Editando: ${l.nombre}`;
+  document.getElementById('cfg-linea-save-btn').textContent   = '✓ Guardar cambios';
+  document.getElementById('cfg-linea-cancel-btn').style.display = 'inline-flex';
+  document.getElementById('cfg-linea-nombre').focus();
+}
+
+function eliminarLineaConfig(i) {
+  const nombre = DB.lineas[i]?.nombre || 'esta línea';
+  if (!confirm(`¿Eliminár "${nombre}"? Los movimientos no se borran, solo la clasificación.`)) return;
+  DB.lineas.splice(i, 1);
+  persistDB();
+  renderLineasConfigLista();
+  if (_lineaFiltroActual === nombre) { _lineaFiltroActual = ''; }
+  showToast('Línea eliminada');
+}
+
+function cancelarEditLinea() { _limpiarFormLinea(); }
+
+function _limpiarFormLinea() {
+  document.getElementById('cfg-linea-idx').value              = -1;
+  document.getElementById('cfg-linea-nombre').value           = '';
+  document.getElementById('cfg-linea-keywords').value         = '';
+  document.getElementById('cfg-linea-color').value            = '#34d399';
+  document.getElementById('cfg-linea-form-title').textContent = '+ Nueva línea de producto';
+  document.getElementById('cfg-linea-save-btn').textContent   = '+ Agregar línea';
+  document.getElementById('cfg-linea-cancel-btn').style.display = 'none';
+}
+
+// ── Cuenta ───────────────────────────────────────────────────────────────────
+
+async function cambiarPasswordConfig() {
+  const pw1  = document.getElementById('cfg-new-password').value;
+  const pw2  = document.getElementById('cfg-confirm-password').value;
+  const msg  = document.getElementById('cfg-pw-msg');
+  msg.style.display = 'block';
+
+  if (!pw1 || pw1.length < 8) { msg.style.color = 'var(--red)'; msg.textContent = 'La contraseña debe tener al menos 8 caracteres.'; return; }
+  if (pw1 !== pw2)             { msg.style.color = 'var(--red)'; msg.textContent = 'Las contraseñas no coinciden.'; return; }
+
+  try {
+    const r = await backendFetch('POST', '/auth/change-password', { password: pw1 });
+    const d = await r.json();
+    if (!r.ok) { msg.style.color = 'var(--red)'; msg.textContent = d.error || 'Error al cambiar la contraseña.'; return; }
+    msg.style.color = 'var(--green)';
+    msg.textContent = '✓ Contraseña actualizada correctamente.';
+    document.getElementById('cfg-new-password').value     = '';
+    document.getElementById('cfg-confirm-password').value = '';
+  } catch(e) {
+    msg.style.color = 'var(--red)'; msg.textContent = 'Error de conexión.';
+  }
+}
+
+function cerrarSesion() {
+  authClear();
+  location.reload();
+}
+
+// ── Datos ─────────────────────────────────────────────────────────────────────
+
+function exportarDatosJSON() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `boreal-datos-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+async function confirmarEliminarDatos() {
+  if (!confirm('¿Seguro querés eliminar TODOS tus datos? Esta acción no se puede deshacer.')) return;
+  if (!confirm('Última confirmación: se borrarán todos tus movimientos, comprobantes y configuración.')) return;
+  await clearPersistedDB();
+  location.reload();
 }
 </script>
 </body>

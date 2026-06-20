@@ -115,6 +115,20 @@ app.get('/auth/me', requireAuth, (req, res) => {
   res.json({ user: { id: user.id, email: user.email, created_at: user.created_at } });
 });
 
+// POST /auth/change-password
+app.post('/auth/change-password', requireAuth, async (req, res) => {
+  const { password } = req.body || {};
+  if (!password || password.length < 8) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  }
+  const hashed = await bcrypt.hash(password, 12);
+  const user = DB.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  user.password = hashed;
+  saveDB(DB);
+  res.json({ ok: true });
+});
+
 // ─── Rutas de datos de usuario ────────────────────────────────────────────────
 
 app.get('/data/:key', requireAuth, (req, res) => {
