@@ -1,5 +1,5 @@
 /**
- * Cerno — Backend Server
+ * Artha — Backend Server
  *
  * Provee:
  *  - Autenticación JWT (register / login / logout)
@@ -20,10 +20,10 @@ const jwt     = require('jsonwebtoken');
 const PORT          = parseInt(process.env.PORT || '3000', 10);
 const JWT_SECRET    = process.env.JWT_SECRET;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-const DB_PATH       = process.env.DB_PATH || path.join(__dirname, 'cerno-db.json');
+const DB_PATH       = process.env.DB_PATH || path.join(__dirname, 'artha-db.json');
 
 if (!JWT_SECRET) {
-  console.error('[cerno] ERROR: JWT_SECRET no está definido en .env');
+  console.error('[artha] ERROR: JWT_SECRET no está definido en .env');
   process.exit(1);
 }
 
@@ -36,7 +36,7 @@ function loadDB() {
       return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
     }
   } catch (e) {
-    console.warn('[cerno] No se pudo leer la DB, arrancando vacía:', e.message);
+    console.warn('[artha] No se pudo leer la DB, arrancando vacía:', e.message);
   }
   return { users: [], data: {} };
 }
@@ -45,7 +45,7 @@ function saveDB(db) {
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
   } catch (e) {
-    console.error('[cerno] Error al guardar DB:', e.message);
+    console.error('[artha] Error al guardar DB:', e.message);
   }
 }
 
@@ -176,7 +176,7 @@ app.post('/api/:endpoint', requireAuth, async (req, res) => {
     if (!upstream.ok) return res.status(upstream.status).json({ error: data.error?.message || 'Error de API' });
     res.json(data);
   } catch (err) {
-    console.error('[cerno] Error Anthropic:', err.message);
+    console.error('[artha] Error Anthropic:', err.message);
     res.status(502).json({ error: 'No se pudo contactar la API de IA' });
   }
 });
@@ -200,7 +200,7 @@ app.get('/macro/datos', requireAuth, async (_req, res) => {
   try {
     const ipcRes = await fetch(
       'https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=13&sort=desc&format=json',
-      { headers: { 'User-Agent': 'cerno/1.0' }, signal: AbortSignal.timeout(8000) }
+      { headers: { 'User-Agent': 'artha/1.0' }, signal: AbortSignal.timeout(8000) }
     );
     if (ipcRes.ok) {
       const ipcJson = await ipcRes.json();
@@ -211,7 +211,7 @@ app.get('/macro/datos', requireAuth, async (_req, res) => {
       })).filter(d => d.variacion !== null);
     }
   } catch (e) {
-    console.warn('[cerno] INDEC IPC error:', e.message);
+    console.warn('[artha] INDEC IPC error:', e.message);
   }
 
   // ── Dólar BNA via Bluelytics (pública, sin auth) ─────────────────────────
@@ -229,7 +229,7 @@ app.get('/macro/datos', requireAuth, async (_req, res) => {
       };
     }
   } catch (e) {
-    console.warn('[cerno] Dólar error:', e.message);
+    console.warn('[artha] Dólar error:', e.message);
   }
 
   MACRO_CACHE.data = resultado;
@@ -250,7 +250,7 @@ app.get('*', (_req, res) => {
 // ─── Arrancar ─────────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
-  console.log(`[cerno] Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`[cerno] Base de datos: ${DB_PATH}`);
-  console.log(`[cerno] IA proxy: ${ANTHROPIC_KEY ? 'activa' : 'DESACTIVADA (falta ANTHROPIC_API_KEY)'}`);
+  console.log(`[artha] Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`[artha] Base de datos: ${DB_PATH}`);
+  console.log(`[artha] IA proxy: ${ANTHROPIC_KEY ? 'activa' : 'DESACTIVADA (falta ANTHROPIC_API_KEY)'}`);
 });

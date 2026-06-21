@@ -1,7 +1,7 @@
 {
-  "name": "cerno",
+  "name": "artha",
   "version": "1.0.0",
-  "description": "Cerno — Sistema de gestión financiera para PyMEs",
+  "description": "Artha — Sistema de gestión financiera para PyMEs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

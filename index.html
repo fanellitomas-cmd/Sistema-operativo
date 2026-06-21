@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cerno — Gestión financiera</title>
+<title>Artha — Gestión financiera</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -190,7 +190,7 @@ html, body { height: 100%; font-family: 'IBM Plex Sans', sans-serif; background:
 /* SETUP OVERLAY */
 
 /* ═══════════════════════════════════════════════
-   SETUP · CERNO
+   SETUP · ARTHA
 ═══════════════════════════════════════════════ */
 .setup-overlay {
   position: fixed; inset: 0; z-index: 1000;
@@ -2035,7 +2035,7 @@ hr, .divider { border-color: var(--border) !important; }
   .ndb-donut-box { margin: 0 auto; }
 }
 
-/* ── Dashboard · Cerno typography (Bricolage) ── */
+/* ── Dashboard · Artha typography (Bricolage) ── */
 .ndb-h1 {
   font-family: 'Bricolage Grotesque', sans-serif !important;
   font-weight: 700 !important;
@@ -2547,7 +2547,7 @@ hr, .divider { border-color: var(--border) !important; }
   .ndb-search { flex: 1; }
 }
 
-/* Cerno: matches screenshot directly */
+/* Artha: matches screenshot directly */
 .ndb-h1 {
   font-family: "Bricolage Grotesque", sans-serif !important;
   font-weight: 700 !important;
@@ -3187,7 +3187,7 @@ hr, .divider { border-color: var(--border) !important; }
   .nfc-search, .nfc-search-sm { flex: 1; }
 }
 
-/* Cerno — clean modern */
+/* Artha — clean modern */
 .nfc-h1 {
   font-family: "Bricolage Grotesque", sans-serif !important;
   font-weight: 700 !important;
@@ -3430,7 +3430,7 @@ hr, .divider { border-color: var(--border) !important; }
 <body>
 
 <!-- ═══════════════════════════════════════════════
-     LOGIN — Cerno Auth
+     LOGIN — Artha Auth
 ═══════════════════════════════════════════════ -->
 <div id="login-overlay">
   <div class="login-wrap">
@@ -3444,7 +3444,7 @@ hr, .divider { border-color: var(--border) !important; }
             <path d="M10 4.5c-1.4 0-2.5 1.1-2.5 2.5S8.6 9.5 10 9.5 12.5 8.4 12.5 7 11.4 4.5 10 4.5z" fill="rgba(255,255,255,0.4)"/>
           </svg>
         </div>
-        Cerno
+        Artha
       </div>
       <div class="login-hero-body">
         <div class="login-hero-title">Tu finanzas,<br><em>bajo control</em></div>
@@ -3499,14 +3499,14 @@ hr, .divider { border-color: var(--border) !important; }
 
       <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
 
-      <div class="login-footer">Cerno — Gestión financiera &nbsp;·&nbsp; Tus datos siempre seguros</div>
+      <div class="login-footer">Artha — Gestión financiera &nbsp;·&nbsp; Tus datos siempre seguros</div>
     </div>
 
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     SETUP — Cerno
+     SETUP — Artha
 ═══════════════════════════════════════════════ -->
 <div class="setup-overlay" id="setup-overlay">
 
@@ -3528,7 +3528,7 @@ hr, .divider { border-color: var(--border) !important; }
             <path d="M10 4.5c-1.4 0-2.5 1.1-2.5 2.5S8.6 9.5 10 9.5 12.5 8.4 12.5 7 11.4 4.5 10 4.5z" fill="rgba(255,255,255,0.4)"/>
           </svg>
         </div>
-        <div>Cerno</div>
+        <div>Artha</div>
       </div>
 
       <div>
@@ -3620,7 +3620,7 @@ hr, .divider { border-color: var(--border) !important; }
         <path d="M12 4C9.2 4 7 6.2 7 9c0 1.8.9 3.4 2.3 4.4L8 18.5c-.1.4.1.8.4 1 .2.1.4.2.6.2.2 0 .4-.1.6-.2L12 17.8l2.4 1.7c.4.3.9.2 1.2-.2.3-.3.3-.7.1-1L14.7 13.4C16.1 12.4 17 10.8 17 9c0-2.8-2.2-5-5-5z" fill="white"/>
         <circle cx="12" cy="9" r="2" fill="rgba(22,163,74,0.6)"/>
       </svg>
-      <span class="logo-text"><span class="lt-flujo" style="color:var(--green)">Cerno</span></span>
+      <span class="logo-text"><span class="lt-flujo" style="color:var(--green)">Artha</span></span>
     </div>
     <div class="logo-sub" id="sb-version">v3.0 · Gastos · Análisis · Reportes</div>
   </div>
@@ -16060,7 +16060,7 @@ const AUTH = {
   user:  null,
 };
 
-const AUTH_STORAGE_KEY = 'cerno_auth_token';
+const AUTH_STORAGE_KEY = 'artha_auth_token';
 
 function authLoad() {
   try { AUTH.token = localStorage.getItem(AUTH_STORAGE_KEY) || null; } catch (_) {}
@@ -16192,7 +16192,7 @@ async function persistDB() {
   try {
     await backendFetch('PUT', '/data/' + DB_DATA_KEY, { value: DB });
   } catch (e) {
-    console.warn('[cerno] No se pudo persistir:', e.message);
+    console.warn('[artha] No se pudo persistir:', e.message);
   }
 }
 
@@ -16208,7 +16208,7 @@ async function restoreDB() {
     Object.keys(saved).forEach(k => { DB[k] = saved[k]; });
     return !!(DB.movimientos?.length || DB.registros?.length || DB.empresa);
   } catch (e) {
-    console.warn('[cerno] No se pudo restaurar:', e.message);
+    console.warn('[artha] No se pudo restaurar:', e.message);
     return false;
   }
 }
@@ -16980,7 +16980,7 @@ async function _migrarLocalStorageSiNecesario() {
     localStorage.removeItem(OLD_KEY);
     return true;
   } catch (e) {
-    console.warn('[cerno] Migración localStorage fallida:', e.message);
+    console.warn('[artha] Migración localStorage fallida:', e.message);
     return false;
   }
 }
@@ -17199,7 +17199,7 @@ function exportarDatosJSON() {
   const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = `cerno-datos-${new Date().toISOString().slice(0,10)}.json`;
+  a.href = url; a.download = `artha-datos-${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(url);
 }
 
