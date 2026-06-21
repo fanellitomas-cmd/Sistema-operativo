@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boreal — Fintech Verde</title>
+<title>Cerno — Gestión financiera</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -190,7 +190,7 @@ html, body { height: 100%; font-family: 'IBM Plex Sans', sans-serif; background:
 /* SETUP OVERLAY */
 
 /* ═══════════════════════════════════════════════
-   SETUP · BOREAL — Fintech Verde
+   SETUP · CERNO
 ═══════════════════════════════════════════════ */
 .setup-overlay {
   position: fixed; inset: 0; z-index: 1000;
@@ -2035,7 +2035,7 @@ hr, .divider { border-color: var(--border) !important; }
   .ndb-donut-box { margin: 0 auto; }
 }
 
-/* ── Dashboard · Boreal typography (Bricolage) ── */
+/* ── Dashboard · Cerno typography (Bricolage) ── */
 .ndb-h1 {
   font-family: 'Bricolage Grotesque', sans-serif !important;
   font-weight: 700 !important;
@@ -2547,7 +2547,7 @@ hr, .divider { border-color: var(--border) !important; }
   .ndb-search { flex: 1; }
 }
 
-/* Boreal: matches screenshot directly */
+/* Cerno: matches screenshot directly */
 .ndb-h1 {
   font-family: "Bricolage Grotesque", sans-serif !important;
   font-weight: 700 !important;
@@ -3187,7 +3187,7 @@ hr, .divider { border-color: var(--border) !important; }
   .nfc-search, .nfc-search-sm { flex: 1; }
 }
 
-/* Boreal — clean modern */
+/* Cerno — clean modern */
 .nfc-h1 {
   font-family: "Bricolage Grotesque", sans-serif !important;
   font-weight: 700 !important;
@@ -3430,7 +3430,7 @@ hr, .divider { border-color: var(--border) !important; }
 <body>
 
 <!-- ═══════════════════════════════════════════════
-     LOGIN — Boreal Auth
+     LOGIN — Cerno Auth
 ═══════════════════════════════════════════════ -->
 <div id="login-overlay">
   <div class="login-wrap">
@@ -3438,8 +3438,13 @@ hr, .divider { border-color: var(--border) !important; }
     <!-- Panel izquierdo -->
     <div class="login-hero">
       <div class="login-hero-brand">
-        <div class="login-hero-mark">B</div>
-        boreal
+        <div class="login-hero-mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2C7.2 2 5 4.2 5 7c0 1.8.9 3.4 2.3 4.4L6 16.5c-.1.4.1.8.4 1 .2.1.4.2.6.2.2 0 .4-.1.6-.2L10 15.8l2.4 1.7c.4.3.9.2 1.2-.2.3-.3.3-.7.1-1L12.7 11.4C14.1 10.4 15 8.8 15 7c0-2.8-2.2-5-5-5z" fill="white"/>
+            <path d="M10 4.5c-1.4 0-2.5 1.1-2.5 2.5S8.6 9.5 10 9.5 12.5 8.4 12.5 7 11.4 4.5 10 4.5z" fill="rgba(255,255,255,0.4)"/>
+          </svg>
+        </div>
+        Cerno
       </div>
       <div class="login-hero-body">
         <div class="login-hero-title">Tu finanzas,<br><em>bajo control</em></div>
@@ -3494,14 +3499,14 @@ hr, .divider { border-color: var(--border) !important; }
 
       <button class="login-submit" id="auth-submit-btn" onclick="authSubmit()">Ingresar</button>
 
-      <div class="login-footer">Boreal — Fintech Verde &nbsp;·&nbsp; Tus datos siempre seguros</div>
+      <div class="login-footer">Cerno — Gestión financiera &nbsp;·&nbsp; Tus datos siempre seguros</div>
     </div>
 
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     SETUP — Boreal Fintech
+     SETUP — Cerno
 ═══════════════════════════════════════════════ -->
 <div class="setup-overlay" id="setup-overlay">
 
@@ -3517,8 +3522,13 @@ hr, .divider { border-color: var(--border) !important; }
     <!-- Left — hero black -->
     <div class="setup-hero">
       <div class="setup-hero-brand">
-        <div class="setup-hero-mark">◈</div>
-        <div>boreal</div>
+        <div class="setup-hero-mark">
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2C7.2 2 5 4.2 5 7c0 1.8.9 3.4 2.3 4.4L6 16.5c-.1.4.1.8.4 1 .2.1.4.2.6.2.2 0 .4-.1.6-.2L10 15.8l2.4 1.7c.4.3.9.2 1.2-.2.3-.3.3-.7.1-1L12.7 11.4C14.1 10.4 15 8.8 15 7c0-2.8-2.2-5-5-5z" fill="white"/>
+            <path d="M10 4.5c-1.4 0-2.5 1.1-2.5 2.5S8.6 9.5 10 9.5 12.5 8.4 12.5 7 11.4 4.5 10 4.5z" fill="rgba(255,255,255,0.4)"/>
+          </svg>
+        </div>
+        <div>Cerno</div>
       </div>
 
       <div>
@@ -3605,8 +3615,12 @@ hr, .divider { border-color: var(--border) !important; }
 <div class="sidebar">
   <div class="logo">
     <div class="logo-title">
-      <img src="data:image/png;base64,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" alt="" class="sidebar-logo-svg" style="object-fit:contain"/>
-      <span class="logo-text"><span class="lt-flujo">Flujo</span><span class="lt-control">Control</span></span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="sidebar-logo-svg" style="filter:none">
+        <rect width="24" height="24" rx="6" fill="#16a34a"/>
+        <path d="M12 4C9.2 4 7 6.2 7 9c0 1.8.9 3.4 2.3 4.4L8 18.5c-.1.4.1.8.4 1 .2.1.4.2.6.2.2 0 .4-.1.6-.2L12 17.8l2.4 1.7c.4.3.9.2 1.2-.2.3-.3.3-.7.1-1L14.7 13.4C16.1 12.4 17 10.8 17 9c0-2.8-2.2-5-5-5z" fill="white"/>
+        <circle cx="12" cy="9" r="2" fill="rgba(22,163,74,0.6)"/>
+      </svg>
+      <span class="logo-text"><span class="lt-flujo" style="color:var(--green)">Cerno</span></span>
     </div>
     <div class="logo-sub" id="sb-version">v3.0 · Gastos · Análisis · Reportes</div>
   </div>
@@ -16046,7 +16060,7 @@ const AUTH = {
   user:  null,
 };
 
-const AUTH_STORAGE_KEY = 'boreal_auth_token';
+const AUTH_STORAGE_KEY = 'cerno_auth_token';
 
 function authLoad() {
   try { AUTH.token = localStorage.getItem(AUTH_STORAGE_KEY) || null; } catch (_) {}
@@ -16178,7 +16192,7 @@ async function persistDB() {
   try {
     await backendFetch('PUT', '/data/' + DB_DATA_KEY, { value: DB });
   } catch (e) {
-    console.warn('[boreal] No se pudo persistir:', e.message);
+    console.warn('[cerno] No se pudo persistir:', e.message);
   }
 }
 
@@ -16194,7 +16208,7 @@ async function restoreDB() {
     Object.keys(saved).forEach(k => { DB[k] = saved[k]; });
     return !!(DB.movimientos?.length || DB.registros?.length || DB.empresa);
   } catch (e) {
-    console.warn('[boreal] No se pudo restaurar:', e.message);
+    console.warn('[cerno] No se pudo restaurar:', e.message);
     return false;
   }
 }
@@ -16966,7 +16980,7 @@ async function _migrarLocalStorageSiNecesario() {
     localStorage.removeItem(OLD_KEY);
     return true;
   } catch (e) {
-    console.warn('[boreal] Migración localStorage fallida:', e.message);
+    console.warn('[cerno] Migración localStorage fallida:', e.message);
     return false;
   }
 }
@@ -17185,7 +17199,7 @@ function exportarDatosJSON() {
   const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = `boreal-datos-${new Date().toISOString().slice(0,10)}.json`;
+  a.href = url; a.download = `cerno-datos-${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(url);
 }
 
