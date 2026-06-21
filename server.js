@@ -20,7 +20,7 @@ const jwt     = require('jsonwebtoken');
 const PORT          = parseInt(process.env.PORT || '3000', 10);
 const JWT_SECRET    = process.env.JWT_SECRET;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-const DB_PATH       = process.env.DB_PATH || path.join(__dirname, 'boreal-db.json');
+const DB_PATH       = process.env.DB_PATH || path.join(__dirname, 'cerno-db.json');
 
 if (!JWT_SECRET) {
   console.error('[cerno] ERROR: JWT_SECRET no está definido en .env');

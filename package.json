@@ -1,7 +1,7 @@
 {
-  "name": "boreal-fintech",
+  "name": "cerno",
   "version": "1.0.0",
-  "description": "Boreal — Sistema de gestión financiera para PyMEs",
+  "description": "Cerno — Sistema de gestión financiera para PyMEs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
